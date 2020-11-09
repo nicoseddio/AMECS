@@ -1,150 +1,88 @@
 // AMECS subsystem
-//https://www.inspiredacoustics.com/en/MIDI_note_numbers_and_center_frequencies
+// https://www.inspiredacoustics.com/en/MIDI_note_numbers_and_center_frequencies
+// https://modernweb.com/creating-sound-with-the-web-audio-api-and-oscillators/
+
 
 let consolediv = document.getElementById('console');
-let button_test = document.getElementById('testbutton');
+log(`begin operation: influence.integrate(Cytus);`);
+
+let button_play = document.getElementById('button_play');
+let button_gen_mel = document.getElementById('button_gen_mel');
 let audioCtx = new(window.AudioContext || window.webkitAudioContext)();
 
 let current_melody = random_melody();
+let tempo = 100;
 
-button_test.addEventListener("click", evt => {
-    playMelody();
+
+button_play.addEventListener("click", evt => {
+    playMelody(current_melody);
 });
-
-log(`begin operation: influence.integrate(Cytus);`);
-log(current_melody.toString());
+button_gen_mel.addEventListener("click", evt => {
+    current_melody = random_melody();
+});
 
 async function log(s) {
     consolediv.innerHTML += `<p>> ${s} </p>`;
 }
 
-// function playMelody(melody = random_melody()) {
-//     for (note in melody) {
-//         playNote(freq(note));
-//     }
-// }
-// function playNote(frequency, length = 1) {
-//     // create Oscillator node
-//     let oscillator = audioCtx.createOscillator();
-  
-//     oscillator.type = 'sine';
-//     oscillator.frequency.value = frequency; // value in hertz
-//     let gainNode = audioCtx.createGain();
-//     gainNode.gain.value = .25;
-//     oscillator.connect(gainNode);
-//     gainNode.connect(audioCtx.destination);
-//     oscillator.start();
-//     oscillator.stop(audioCtx.currentTime + length);
-
-// }
-
-/**
- * Get the pitch frequency in herzs (with custom concert tuning) from a midi number
- *
- * This function is currified so it can be partially applied (see examples)
- *
- * @param {Float} tuning - the frequency of A4 (null means 440)
- * @param {Integer} midi - the midi number
- * @return {Float} the frequency of the note
- *
- * @example
- * // 69 midi is A4
- * freq(null, 69) // => 440
- * freq(444, 69) // => 444
- *
- * @example
- * // partially applied
- * var freq = require('midi-freq')(440)
- * freq(69) // => 440
- * 
- * Author: https://github.com/danigb/midi-freq
- */
-function freq (tuning, midi) {
-    tuning = tuning || 440
-    if (arguments.length > 1) return freq(tuning)(midi)
-
-    return function (m) {
-        return m === 0 || (m > 0 && m < 128) ? Math.pow(2, (m - 69) / 12) * tuning : null
+function random_melody(base_note = 69, melody_length = 16) {
+    let freqs_melody = [];
+    for (i = 0; i < melody_length; i++) {
+        scale_note = random_scale_note();
+        if (scale_note == 0) freqs_melody.push([0, random_note_length(5,3)]);
+        else freqs_melody.push([midi_to_freq(base_note+random_scale_note()+1),random_note_length()])
     }
+    console.log(freqs_melody);
+    log(`Melody generated: <br>${melody_to_string(freqs_melody)}`)
+    return freqs_melody;
 }
-
 function midi_to_freq(midi_note) {
     return Math.pow(2, (midi_note - 69) / 12) * 440;
 }
-function random_melody(base_note = 69, melody_length = 16) {
-    let melody = [];
-    for (i = 0; i < melody_length; i++) {
-        melody.push([base_note+random_scale_note(),4])
-    }
-    console.log(melody);
-    return melody;
-}
-function random_scale_note(scale_length = 12, type = 'major') {
+function random_scale_note(scale_length = 13, type = 'major') {
     let note = Math.floor(Math.random() * scale_length);
     if (type === 'major') if ([1,3,6,8,10].includes(note)) note -= 1;
     if (type === 'minor') if ([1,4,6,9,11].includes(note)) note -= 1;
     return note;
 }
+function random_note_length(exp = 3,th = 2) {
+    return Math.pow(2, Math.floor(Math.random() * exp)+th);
+}
 
-
-
-
-
-
-
-
-// // create web audio api context
-// var audioCtx = new(window.AudioContext || window.webkitAudioContext)();
-
-function playNote(frequency, duration) {
-  // create Oscillator node
+function playMelody(melody) {
+    var len = melody.length,
+        melodycopy = new Array(len);
+    for (var i=0; i<len; ++i)
+        melodycopy[i] = melody[i].slice(0);
+    if (melodycopy.length > 0) {
+        note = melodycopy.pop();
+        playNote(note[0], 1000 * 256 / (note[1] * tempo), melodycopy);
+    }
+}
+function playNote(frequency, duration, melody) {
   var oscillator = audioCtx.createOscillator();
-
-  oscillator.type = 'square';
+  oscillator.type = 'sine';
   oscillator.frequency.value = frequency; // value in hertz
-  oscillator.connect(audioCtx.destination);
+  let gainNode = audioCtx.createGain();
+  gainNode.gain.value = .35;
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
   oscillator.start();
-
   setTimeout(
     function() {
       oscillator.stop();
-      playMelody();
+      playMelody(melody);
     }, duration);
 }
 
-function playMelody() {
-  if (notes.length > 0) {
-    note = notes.pop();
-    playNote(midi_to_freq(note[0]), 1000 * 256 / (note[1] * tempo));
-  }
+function melody_to_string(melody) {
+    let s = "";
+    for (l in melody) {
+        s += `&emsp;&emsp;[ ${melody[l][0]}, ${melody[l][1]} ]<br>`
+    }
+    return s;
 }
 
-notes = current_melody;
-// notes = [
-//   [659, 4],
-//   [659, 4],
-//   [659, 4],
-//   [523, 8],
-//   [0, 16],
-//   [783, 16],
-//   [659, 4],
-//   [523, 8],
-//   [0, 16],
-//   [783, 16],
-//   [659, 4],
-//   [0, 4],
-//   [987, 4],
-//   [987, 4],
-//   [987, 4],
-//   [1046, 8],
-//   [0, 16],
-//   [783, 16],
-//   [622, 4],
-//   [523, 8],
-//   [0, 16],
-//   [783, 16],
-//   [659, 4]
-// ];
 
+notes = current_melody;
 notes.reverse();
-tempo = 100;
