@@ -8,10 +8,13 @@ log(`begin operation: influence.integrate(Cytus);`);
 
 let button_play = document.getElementById('button_play');
 let button_gen_mel = document.getElementById('button_gen_mel');
+let button_gen_beat = document.getElementById('button_gen_beat');
+let fader_main = document.getElementById("fader_main");
 let audioCtx = new(window.AudioContext || window.webkitAudioContext)();
 
 let current_melody = random_melody();
 let tempo = 100;
+let volume_main = fader_main.value/100;
 
 
 button_play.addEventListener("click", evt => {
@@ -20,6 +23,12 @@ button_play.addEventListener("click", evt => {
 button_gen_mel.addEventListener("click", evt => {
     current_melody = random_melody();
 });
+button_gen_beat.addEventListener("click", evt => {
+    current_melody = convert_all_to_note(random_beat());
+});
+fader_main.oninput = function() {
+    volume_main = this.value/100;
+}
 
 async function log(s) {
     consolediv.innerHTML += `<p>> ${s} </p>`;
@@ -49,6 +58,24 @@ function random_note_length(exp = 3,th = 2) {
     return Math.pow(2, Math.floor(Math.random() * exp)+th);
 }
 
+function random_beat(beat_length = 16, note_length = 16, beat_note = 45, threshold = .5) {
+    let beatmap = [];
+    for (i = 0; i < beat_length; i++) {
+        if (Math.random() > threshold) beatmap.push([beat_note,note_length]);
+        else beatmap.push([0,note_length]);
+    }
+    log(`Beat generated: <br>${melody_to_string(beatmap)}`)
+    return beatmap;
+}
+
+function convert_all_to_note(beatmap, note = 57, ignoreZero = false) {
+    for (i in beatmap)
+        if (beatmap[i][0] != 0 || ignoreZero)
+            beatmap[i][0] = midi_to_freq(note);
+    log(`Set all notes to ${note}`);
+    return beatmap;
+}
+
 function playMelody(melody) {
     var len = melody.length,
         melodycopy = new Array(len);
@@ -64,7 +91,7 @@ function playNote(frequency, duration, melody) {
   oscillator.type = 'sine';
   oscillator.frequency.value = frequency; // value in hertz
   let gainNode = audioCtx.createGain();
-  gainNode.gain.value = .35;
+  gainNode.gain.value = volume_main;
   oscillator.connect(gainNode);
   gainNode.connect(audioCtx.destination);
   oscillator.start();
@@ -84,5 +111,5 @@ function melody_to_string(melody) {
 }
 
 
-notes = current_melody;
-notes.reverse();
+// notes = current_melody;
+// notes.reverse();

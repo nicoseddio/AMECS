@@ -26,8 +26,10 @@
         <script defer src="system.js" charset="utf-8"></script>
     </head>
     <body>
-
-        <button id="button_play">play!</button> <button id="button_gen_mel">generate melody!</button>
+        <div class="slidecontainer">
+            <input type="range" min="1" max="100" value="25" class="slider" id="fader_main">
+        </div>
+        <button id="button_play">play!</button> <button id="button_gen_mel">generate melody!</button> <button id="button_gen_beat">generate beat!</button>
         <div id="console"></div>
 
     </body>
