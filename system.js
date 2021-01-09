@@ -2,6 +2,12 @@
 // https://www.inspiredacoustics.com/en/MIDI_note_numbers_and_center_frequencies
 // https://modernweb.com/creating-sound-with-the-web-audio-api-and-oscillators/
 
+// https://jazz-soft.net/demo/WriteMidiFile.html
+// https://www.smashingmagazine.com/2018/03/web-midi-api/
+// http://www.midijs.net/lib/midi.js
+// https://intuitive-theory.com/midi-from-scratch/
+// https://modernweb.com/creating-sound-with-the-web-audio-api-and-oscillators/
+
 
 let consolediv = document.getElementById('console');
 log(`begin operation: influence.integrate(Cytus);`);
